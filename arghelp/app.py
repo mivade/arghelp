@@ -1,5 +1,5 @@
 from argparse import ArgumentParser, Namespace
-from typing import List, Optional
+from typing import Callable, List, Optional, Tuple
 
 
 def argument(*name_or_flags, **kwargs):
@@ -15,24 +15,35 @@ arg = argument  # noqa
 
 
 class Application(object):
-    """A command-line application builder."""
-    def __init__(self):
+    """A command-line application builder.
+
+    :param args: Common command-line arguments
+
+    """
+    def __init__(self, args: Optional[List[Tuple[list, dict]]] = None):
         self.cli = ArgumentParser()
         self.subparsers = self.cli.add_subparsers(dest="subcommand")
+        self._root_command = None  # type: Optional[Callable]
 
-    def subcommand(self, args=[], parent=None):
+        if args is not None:
+            for arg in args:
+                self.cli.add_argument(*arg[0], **arg[1])
+
+    @property
+    def subcommand_count(self) -> int:
+        """Returns the number of registered subcommands."""
+        return len(self.subparsers.choices)
+
+    def subcommand(self, args: Optional[list] = None):
         """Decorator to define a new subcommand in a sanity-preserving way.
-        The function will be stored in the ``func`` variable when the parser
-        parses arguments so that it can be called directly like so::
-
-            args = cli.parse_args()
-            args.func(args)
 
         Usage example::
 
-            cli = Application()
+            app = Application()
 
-            @cli.subcommand([arg("-d", help="Enable debug mode", action="store_true")])
+            @app.subcommand([
+                arg("-d", help="Enable debug mode", action="store_true"),
+            ])
             def subcommand(args):
                 print(args)
 
@@ -41,16 +52,29 @@ class Application(object):
             $ python cli.py subcommand -d
 
         """
-        parent = parent or self.subparsers
-
         def decorator(func):
             name = func.__name__.replace("_", "-")
-            parser = parent.add_parser(name, description=func.__doc__)
+            parser = self.subparsers.add_parser(name, description=func.__doc__)
 
-            for arg in args:
-                parser.add_argument(*arg[0], **arg[1])
+            if args is not None:
+                for arg in args:
+                    parser.add_argument(*arg[0], **arg[1])
 
-            parser.set_defaults(func=func)
+            parser.set_defaults(_default_func=func)
+
+        return decorator
+
+    def root_command(self):
+        """Decorator to define the default action to take if no subcommands
+        are given. The action must be a function taking a single argument which
+        is the :class:`Namespace` object resulting from parsed options.
+
+        """
+        if self._root_command is not None:
+            raise RuntimeError("Only one root command can be defined")
+
+        def decorator(func):
+            self._root_command = func
 
         return decorator
 
@@ -59,13 +83,16 @@ class Application(object):
         """Parse and return command line arguments."""
         return self.cli.parse_args(args, namespace)
 
-    def main(self) -> None:
+    def main(self, args: Optional[List[str]] = None) -> None:
         """Parse command line arguments and run a subcommand."""
-        args = self.parse_args()
+        args = self.parse_args(args=args)
 
         if args.subcommand is None:
-            self.cli.print_help()
-            return
-
+            if self._root_command is not None:
+                self._root_command(args)
+                return
+            else:
+                self.cli.print_help()
+                return
         else:
-            args.func(args)
+            args._default_func(args)
