@@ -13,4 +13,4 @@ install:
   - pip install .
 
 script:
-  - python -m pytest -v --cov
+  - python -m pytest -v --cov=arghelp
