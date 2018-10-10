@@ -7,10 +7,11 @@ def argument(*name_or_flags, **kwargs):
     subcommand decorator.
 
     """
-    return (list(name_or_flags), kwargs)
+    return list(name_or_flags), kwargs
+
 
 # shortcut
-arg = argument
+arg = argument  # noqa
 
 
 class Application(object):
@@ -43,10 +44,14 @@ class Application(object):
         parent = parent or self.subparsers
 
         def decorator(func):
-            parser = parent.add_parser(func.__name__, description=func.__doc__)
+            name = func.__name__.replace("_", "-")
+            parser = parent.add_parser(name, description=func.__doc__)
+
             for arg in args:
                 parser.add_argument(*arg[0], **arg[1])
+
             parser.set_defaults(func=func)
+
         return decorator
 
     def parse_args(self, args: Optional[List[str]] = None,
