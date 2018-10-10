@@ -1,5 +1,5 @@
 from argparse import ArgumentParser, Namespace
-from typing import Callable, List, NamedTuple, Optional, Tuple
+from typing import Callable, List, NamedTuple, Optional
 
 
 Argument = NamedTuple("Argument", [
