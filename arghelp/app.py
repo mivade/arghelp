@@ -1,13 +1,19 @@
 from argparse import ArgumentParser, Namespace
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, List, NamedTuple, Optional, Tuple
 
 
-def argument(*name_or_flags, **kwargs):
+Argument = NamedTuple("Argument", [
+    ("name_or_flags", List[str]),
+    ("kwargs", dict),
+])
+
+
+def argument(*name_or_flags, **kwargs) -> Argument:
     """Convenience function to properly format arguments to pass to the
     subcommand decorator.
 
     """
-    return list(name_or_flags), kwargs
+    return Argument(list(name_or_flags), kwargs)
 
 
 # shortcut
@@ -20,21 +26,21 @@ class Application(object):
     :param args: Common command-line arguments
 
     """
-    def __init__(self, args: Optional[List[Tuple[list, dict]]] = None):
+    def __init__(self, args: Optional[List[Argument]] = None):
         self.cli = ArgumentParser()
         self.subparsers = self.cli.add_subparsers(dest="subcommand")
         self._root_command = None  # type: Optional[Callable]
 
         if args is not None:
             for arg in args:
-                self.cli.add_argument(*arg[0], **arg[1])
+                self.cli.add_argument(*arg.name_or_flags, **arg.kwargs)
 
     @property
     def subcommand_count(self) -> int:
         """Returns the number of registered subcommands."""
         return len(self.subparsers.choices)
 
-    def subcommand(self, args: Optional[list] = None):
+    def subcommand(self, args: Optional[List[Argument]] = None):
         """Decorator to define a new subcommand in a sanity-preserving way.
 
         Usage example::
@@ -58,13 +64,13 @@ class Application(object):
 
             if args is not None:
                 for arg in args:
-                    parser.add_argument(*arg[0], **arg[1])
+                    parser.add_argument(*arg.name_or_flags, **arg.kwargs)
 
             parser.set_defaults(_default_func=func)
 
         return decorator
 
-    def root_command(self, args: Optional[list] = None):
+    def root_command(self, args: Optional[List[Argument]] = None):
         """Decorator to define the default action to take if no subcommands
         are given. The action must be a function taking a single argument which
         is the :class:`Namespace` object resulting from parsed options.
@@ -80,7 +86,7 @@ class Application(object):
 
             if args is not None:
                 for arg in args:
-                    self.cli.add_argument(*arg[0], **arg[1])
+                    self.cli.add_argument(*arg.name_or_flags, **arg.kwargs)
 
             self._root_command = func
 
