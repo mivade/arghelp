@@ -28,7 +28,7 @@ class Application(object):
     """
     def __init__(self, args: Optional[List[Argument]] = None):
         self.cli = ArgumentParser()
-        self.subparsers = self.cli.add_subparsers(dest="subcommand")
+        self.subparsers = None
         self._root_command = None  # type: Optional[Callable]
 
         if args is not None:
@@ -38,7 +38,10 @@ class Application(object):
     @property
     def subcommand_count(self) -> int:
         """Returns the number of registered subcommands."""
-        return len(self.subparsers.choices)
+        if self.subparsers is not None:
+            return len(self.subparsers.choices)
+
+        return 0
 
     def subcommand(self, args: Optional[List[Argument]] = None):
         """Decorator to define a new subcommand in a sanity-preserving way.
@@ -58,6 +61,9 @@ class Application(object):
             $ python cli.py subcommand -d
 
         """
+        if self.subparsers is None:
+            self.subparsers = self.cli.add_subparsers(dest="subcommand")
+
         def decorator(func):
             name = func.__name__.replace("_", "-")
             parser = self.subparsers.add_parser(name, description=func.__doc__)
