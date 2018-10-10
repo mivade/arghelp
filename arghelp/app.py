@@ -107,6 +107,10 @@ class Application(object):
         """Parse command line arguments and run a subcommand."""
         args = self.parse_args(args=args)
 
+        if self.subparsers is None:
+            self._root_command(args)
+            return
+
         if args.subcommand is None:
             if self._root_command is not None:
                 self._root_command(args)
