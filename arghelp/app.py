@@ -64,16 +64,24 @@ class Application(object):
 
         return decorator
 
-    def root_command(self):
+    def root_command(self, args: Optional[list] = None):
         """Decorator to define the default action to take if no subcommands
         are given. The action must be a function taking a single argument which
         is the :class:`Namespace` object resulting from parsed options.
 
-        """
-        if self._root_command is not None:
-            raise RuntimeError("Only one root command can be defined")
+        :param args: Additional arguments to supply to the root command. Note
+            that this is in addition to any common arguments supplied upon
+            instantiation.
 
+        """
         def decorator(func):
+            if self._root_command is not None:
+                raise RuntimeError("Only one root command can be defined")
+
+            if args is not None:
+                for arg in args:
+                    self.cli.add_argument(*arg[0], **arg[1])
+
             self._root_command = func
 
         return decorator

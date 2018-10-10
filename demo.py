@@ -5,9 +5,10 @@ app = Application([
 ])
 
 
-@app.root_command()
+@app.root_command([arg("--debug", action="store_true")])
 def root(args):
     print("This is the root command. Congratulations!")
+    print(args)
 
 
 @app.subcommand([arg("name")])
