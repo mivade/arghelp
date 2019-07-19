@@ -143,3 +143,33 @@ Example with output::
     These aren't the droids you're looking for.
     $ python demos/subcmd_with_root.py square 10
     100
+
+
+Mutually exclusive options
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Mutually exclusive options are supported via the ``Group`` class:
+
+.. code-block:: python::
+
+    from arghelp import Application, Group, arg
+
+    app = Application()
+
+
+    @app.subcommand(
+        [
+            arg("--verbose", "-v", action="store_true"),
+            Group(
+                [
+                    arg("-x", action="store_true", help="x mode"),
+                    arg("-y", action="store_true", help="y mode"),
+                ],
+                required=True,
+            ),
+        ]
+    )
+    def required(args):
+        print(args)
+
+For a complete example, see ``demos/groups.py``.
