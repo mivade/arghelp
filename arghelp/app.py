@@ -1,7 +1,5 @@
 from argparse import ArgumentParser, Namespace
-from typing import (
-    Any, Dict, Callable, Iterable, List, NamedTuple, Optional, Union
-)
+from typing import Any, Dict, Callable, Iterable, List, NamedTuple, Optional, Union
 
 
 class Argument(NamedTuple):
@@ -36,6 +34,7 @@ class Application(object):
     :param args: Common command-line arguments
 
     """
+
     def __init__(self, args: Optional[Iterable[Argument]] = None):
         self.cli = ArgumentParser()
         self.subparsers = None
@@ -53,9 +52,7 @@ class Application(object):
 
         return 0
 
-    def subcommand(
-        self, args: Optional[Iterable[Union[Argument, Group]]] = None
-    ):
+    def subcommand(self, args: Optional[Iterable[Union[Argument, Group]]] = None):
         """Decorator to define a new subcommand in a sanity-preserving way.
 
         Usage example::
@@ -75,17 +72,19 @@ class Application(object):
         Mutually-exclusive arguments can be expressed using a :class:`Group` of
         arguments::
 
-            @app.subcommand([
-                arg("--verbose", "-v", action="store_true"),
-                Group(
-                    [
-                        arg("-x", action="store_true", help="x mode"),
-                        arg("-y", action="store_true", help="y mode"),
-                    ],
-                    required=True
-                ),
-            ])
-            def x_or_y(args):
+            @app.subcommand(
+                [
+                    arg("--verbose", "-v", action="store_true"),
+                    Group(
+                        [
+                            arg("-x", action="store_true", help="x mode"),
+                            arg("-y", action="store_true", help="y mode"),
+                        ],
+                        required=True,
+                    ),
+                ]
+            )
+            def required(args):
                 print(args)
 
         """
@@ -101,7 +100,9 @@ class Application(object):
                     if isinstance(arg, Argument):
                         parser.add_argument(*arg.name_or_flags, **arg.kwargs)
                     elif isinstance(arg, Group):
-                        group = parser.add_mutually_exclusive_group(required=arg.required)
+                        group = parser.add_mutually_exclusive_group(
+                            required=arg.required
+                        )
 
                         for garg in arg.args:
                             group.add_argument(*garg.name_or_flags, **garg.kwargs)
@@ -122,6 +123,7 @@ class Application(object):
             instantiation.
 
         """
+
         def decorator(func):
             if self._root_command is not None:
                 raise RuntimeError("Only one root command can be defined")
@@ -135,8 +137,7 @@ class Application(object):
         return decorator
 
     def parse_args(
-        self, args: Optional[List[str]] = None,
-        namespace: Optional[Namespace] = None
+        self, args: Optional[List[str]] = None, namespace: Optional[Namespace] = None
     ) -> Namespace:
         """Parse and return command line arguments."""
         return self.cli.parse_args(args, namespace)

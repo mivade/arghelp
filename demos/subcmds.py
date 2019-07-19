@@ -1,8 +1,6 @@
 from arghelp import Application, arg
 
-app = Application([
-    arg("--verbose", "-v", action="store_true"),
-])
+app = Application([arg("--verbose", "-v", action="store_true")])
 
 
 @app.subcommand([arg("name")])
