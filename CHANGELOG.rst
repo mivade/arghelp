@@ -1,8 +1,10 @@
 Changes
 =======
 
-Unreleased
-----------
+Version 0.2.0
+-------------
+
+**2019-07-19**
 
 - Added support for mutually exclusive options
 - Dropped support for Python 3.5
