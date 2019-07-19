@@ -15,7 +15,7 @@ def droids(_):
 
 @app.subcommand([arg("number", type=int)])
 def square(args):
-    print(args.number**2)
+    print(args.number ** 2)
 
 
 app.main()
