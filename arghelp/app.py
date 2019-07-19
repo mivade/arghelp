@@ -1,11 +1,21 @@
 from argparse import ArgumentParser, Namespace
-from typing import Callable, List, NamedTuple, Optional
+from typing import (
+    Any, Dict, Callable, Iterable, List, NamedTuple, Optional, Union
+)
 
 
-Argument = NamedTuple("Argument", [
-    ("name_or_flags", List[str]),
-    ("kwargs", dict),
-])
+class Argument(NamedTuple):
+    """A single command-line argument."""
+
+    name_or_flags: Iterable[str]  #: name or flags of the argument
+    kwargs: Dict[str, Any]  #: keyword arguments to pass to ``add_argument``
+
+
+class Group(NamedTuple):
+    """A mutually exclusive group of arguments."""
+
+    args: Iterable[Argument]  #: the arguments
+    required: bool = False  #: at least one option must be given
 
 
 def argument(*name_or_flags, **kwargs) -> Argument:
@@ -26,7 +36,7 @@ class Application(object):
     :param args: Common command-line arguments
 
     """
-    def __init__(self, args: Optional[List[Argument]] = None):
+    def __init__(self, args: Optional[Iterable[Argument]] = None):
         self.cli = ArgumentParser()
         self.subparsers = None
         self._root_command = None  # type: Optional[Callable]
@@ -43,7 +53,9 @@ class Application(object):
 
         return 0
 
-    def subcommand(self, args: Optional[List[Argument]] = None):
+    def subcommand(
+        self, args: Optional[Iterable[Union[Argument, Group]]] = None
+    ):
         """Decorator to define a new subcommand in a sanity-preserving way.
 
         Usage example::
@@ -60,6 +72,22 @@ class Application(object):
 
             $ python cli.py subcommand -d
 
+        Mutually-exclusive arguments can be expressed using a :class:`Group` of
+        arguments::
+
+            @app.subcommand([
+                arg("--verbose", "-v", action="store_true"),
+                Group(
+                    [
+                        arg("-x", action="store_true", help="x mode"),
+                        arg("-y", action="store_true", help="y mode"),
+                    ],
+                    required=True
+                ),
+            ])
+            def x_or_y(args):
+                print(args)
+
         """
         if self.subparsers is None:
             self.subparsers = self.cli.add_subparsers(dest="subcommand")
@@ -70,13 +98,21 @@ class Application(object):
 
             if args is not None:
                 for arg in args:
-                    parser.add_argument(*arg.name_or_flags, **arg.kwargs)
+                    if isinstance(arg, Argument):
+                        parser.add_argument(*arg.name_or_flags, **arg.kwargs)
+                    elif isinstance(arg, Group):
+                        group = parser.add_mutually_exclusive_group(required=arg.required)
+
+                        for garg in arg.args:
+                            group.add_argument(*garg.name_or_flags, **garg.kwargs)
+                    else:
+                        raise ValueError(f"Invalid type: {type(arg)}")
 
             parser.set_defaults(_default_func=func)
 
         return decorator
 
-    def root_command(self, args: Optional[List[Argument]] = None):
+    def root_command(self, args: Optional[Iterable[Argument]] = None):
         """Decorator to define the default action to take if no subcommands
         are given. The action must be a function taking a single argument which
         is the :class:`Namespace` object resulting from parsed options.
@@ -98,8 +134,10 @@ class Application(object):
 
         return decorator
 
-    def parse_args(self, args: Optional[List[str]] = None,
-                   namespace: Optional[Namespace] = None) -> Namespace:
+    def parse_args(
+        self, args: Optional[List[str]] = None,
+        namespace: Optional[Namespace] = None
+    ) -> Namespace:
         """Parse and return command line arguments."""
         return self.cli.parse_args(args, namespace)
 

@@ -1,6 +1,6 @@
 import pytest
 
-from arghelp import Application, argument, arg
+from arghelp import Application, argument, arg, Group
 
 
 @pytest.fixture
@@ -19,6 +19,21 @@ def test_no_subcommands():
     app = Application([arg("--list", "-l", action="store_true")])
     args = app.parse_args(["-l"])
     assert args.list
+
+
+def test_subcommand(app):
+    @app.subcommand([arg("-x")])
+    def sub1(args):
+        print(args)
+
+    @app.subcommand(([Group([arg("-x"), arg("-y")])]))
+    def sub2(args):
+        print(args)
+
+    args = app.parse_args(["sub1", "-x", "1"])
+    assert args.x == "1"
+    args = app.parse_args(["sub2", "-y", "2"])
+    assert args.y == "2"
 
 
 class TestMain:
