@@ -52,6 +52,22 @@ class Application(object):
 
         return 0
 
+    def _add_arguments(
+        self, parser: ArgumentParser, args: Iterable[Union[Argument, Group]]
+    ) -> None:
+        for arg in args:
+            if isinstance(arg, Argument):
+                parser.add_argument(*arg.name_or_flags, **arg.kwargs)
+            elif isinstance(arg, Group):
+                group = parser.add_mutually_exclusive_group(
+                    required=arg.required
+                )
+
+                for garg in arg.args:
+                    group.add_argument(*garg.name_or_flags, **garg.kwargs)
+            else:
+                raise ValueError(f"Invalid type: {type(arg)}")
+
     def subcommand(self, args: Optional[Iterable[Union[Argument, Group]]] = None):
         """Decorator to define a new subcommand in a sanity-preserving way.
 
@@ -96,18 +112,7 @@ class Application(object):
             parser = self.subparsers.add_parser(name, description=func.__doc__)
 
             if args is not None:
-                for arg in args:
-                    if isinstance(arg, Argument):
-                        parser.add_argument(*arg.name_or_flags, **arg.kwargs)
-                    elif isinstance(arg, Group):
-                        group = parser.add_mutually_exclusive_group(
-                            required=arg.required
-                        )
-
-                        for garg in arg.args:
-                            group.add_argument(*garg.name_or_flags, **garg.kwargs)
-                    else:
-                        raise ValueError(f"Invalid type: {type(arg)}")
+                self._add_arguments(parser, args)
 
             parser.set_defaults(_default_func=func)
 
@@ -129,8 +134,7 @@ class Application(object):
                 raise RuntimeError("Only one root command can be defined")
 
             if args is not None:
-                for arg in args:
-                    self.cli.add_argument(*arg.name_or_flags, **arg.kwargs)
+                self._add_arguments(self.cli, args)
 
             self._root_command = func
 
