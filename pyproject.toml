@@ -7,7 +7,7 @@ module = "arghelp"
 author = "Michael V. DePalatis"
 author-email = "mike@depalatis.net"
 home-page = "https://github.com/mivade/arghelp"
-description-file="README.rst"
+description-file="README.md"
 requires-python=">=3.6.1,<4"
 classifiers = [
     "License :: OSI Approved :: MIT License",
