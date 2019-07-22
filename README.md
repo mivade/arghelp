@@ -1,18 +1,28 @@
-arghelp
-=======
+# arghelp
 
 Helpers for using `argparse`.
 
-Introduction
-------------
+## Introduction
 
 Python's `argparse` module out of the box provides a rich set of tools
 for building command-line interfaces. While capable, more complex CLIs
 including subcommands require a great deal of verbosity; `arghelp` aims
 to simplify this.
 
-Examples
---------
+## Installation
+
+### Installing from source
+
+`arghelp` uses [flit](https://flit.readthedocs.io/en/latest/index.html). With
+recent versions of `pip` supprting `pyproject.toml` files simply run 
+`pip install .`. Otherwise install flit first and use it to install:
+
+```bash
+pip install flit
+flit install
+```
+
+## Examples
 
 ### Simple usage
 
